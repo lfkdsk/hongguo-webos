@@ -1,0 +1,11 @@
+{
+  "id": "com.lfkdsk.hongguo",
+  "title": "红果短剧",
+  "type": "web",
+  "main": "index.html",
+  "icon": "icon.png",
+  "version": "0.1.0",
+  "vendor": "lfkdsk",
+  "requiredACG": []
+}
+

@@ -1,0 +1,8 @@
+{
+  "id": "com.lfkdsk.hongguo.service",
+  "description": "Hongguo TV catalog and media service",
+  "services": [
+    { "name": "com.lfkdsk.hongguo.service", "description": "Hongguo TV catalog and media service" }
+  ]
+}
+

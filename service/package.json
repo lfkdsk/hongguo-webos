@@ -1,0 +1,9 @@
+{
+  "name": "com.lfkdsk.hongguo.service",
+  "version": "0.1.0",
+  "private": true,
+  "main": "service.js",
+  "dependencies": {
+    "openhongguo": "^0.1.0"
+  }
+}

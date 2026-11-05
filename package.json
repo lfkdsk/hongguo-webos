@@ -1,0 +1,10 @@
+{
+  "name": "hongguo-webos",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "install:service": "npm install --prefix service",
+    "build": "node scripts/build.mjs"
+  }
+}
+
