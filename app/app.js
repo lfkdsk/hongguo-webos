@@ -196,13 +196,16 @@
     let more = true;
     let loading = false;
     let generation = 0;
+    let scroller = null;
 
     async function next() {
       if (loading || !more) return;
       loading = true;
       const mine = generation;
       const first = !seen.size;
-      if (first) footer.replaceChildren(stateView('loading', '正在加载…'));
+      // The footer is about to change; focus must not be lost along with it.
+      if (focused && footer.contains(focused)) setFocus(grid.lastElementChild, { scroll: false });
+      footer.replaceChildren(first ? stateView('loading', '正在加载…') : h('div', { text: '正在加载更多…' }));
       try {
         const page = await load(cursor);
         if (mine !== generation) return;
@@ -213,24 +216,29 @@
         grid.append(...cards);
         cursor = page.cursor || '';
         more = Boolean(page.hasMore && cursor);
-        footer.replaceChildren();
-        if (!seen.size) footer.replaceChildren(stateView('empty', empty));
-        api.onload(seen.size, more);
         loading = false;
-        if (more && (seen.size < FILL_ITEMS || nearEnd())) next();
+        paintFooter();
+        api.onload(seen.size, more);
+        if (more && (seen.size < FILL_ITEMS || nearEnd() || nearBottom())) next();
       } catch (error) {
         if (mine !== generation) return;
         loading = false;
-        const retry = () => { footer.replaceChildren(); next(); };
-        footer.replaceChildren(stateView('error', first ? `加载失败：${error.message}` : error.message, retry));
+        footer.replaceChildren(stateView('error', first ? `加载失败：${error.message}` : error.message, next));
         api.onload(seen.size, more);
-      } finally {
-        if (mine === generation) loading = false;
       }
+    }
+    function paintFooter() {
+      if (!seen.size && !more) footer.replaceChildren(stateView('empty', empty));
+      else if (more) footer.replaceChildren(h('.btn', { focusable: true, text: '加载更多', onclick: next }));
+      else footer.replaceChildren(h('div', { text: '已经到底了' }));
     }
     function nearEnd() {
       if (!focused || focused.parentElement !== grid) return false;
-      return [...grid.children].indexOf(focused) >= grid.children.length - COLUMNS * 2;
+      return [...grid.children].indexOf(focused) >= grid.children.length - COLUMNS * 3;
+    }
+    // A Magic Remote wheel scrolls without moving focus, so position counts too.
+    function nearBottom() {
+      return Boolean(scroller && scroller.offsetParent && scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 1400);
     }
     grid.addEventListener('focus2', () => { if (nearEnd()) next(); });
 
@@ -239,6 +247,10 @@
       grid,
       onload() {},
       next,
+      watch(el) {
+        scroller = el;
+        el.addEventListener('scroll', () => { if (nearBottom()) next(); });
+      },
       reset() {
         generation++;
         seen.clear();
@@ -273,6 +285,7 @@
       setStatus(tab);
     };
     page.append(index === 0 ? resume : '', grid.el);
+    grid.watch(page);
     tab.activate = () => {
       if (!tab.activated) { tab.activated = true; grid.next(); }
       if (index === 0) renderResume(resume);
@@ -298,6 +311,7 @@
     const grid = pagedGrid((cursor) => request('/search', { q: term, cursor }), '没有找到相关短剧');
     const page = h('.tab-page', { scroll: 'y' }, h('.search-bar', null, input), title, grid.el);
     const tab = { el: page, status: '' };
+    grid.watch(page);
     grid.onload = (count) => {
       tab.status = term ? `${count} 条结果` : '';
       setStatus(tab);
